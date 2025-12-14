@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하모니마트 평택점</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const App = {
+    isLoggedIn: false,
+    username: '',
+    password: '',
+    viewMode: 'customer',
+    products: [
+        { id: 1, name: '머스크메론', originalPrice: 5980, salePrice: 3980, unit: '1통', image: '🍈', category: '오늘의행사', badge: '특가' },
+        { id: 2, name: '대봉감', originalPrice: 35800, salePrice: 29800, unit: '10kg', image: '🍊', category: '오늘의행사', badge: '최저가' },
+        { id: 3, name: '봄동', originalPrice: 398, salePrice: 298, unit: '100g', image: '🥬', category: '오늘의행사', badge: '인기' },
+        { id: 4, name: '미니파프리카', originalPrice: 4980, salePrice: 2980, unit: '1봉', image: '🫑', category: '오늘의행사', badge: '특가' },
+        { id: 5, name: '야삭이고추', originalPrice: 2980, salePrice: 1980, unit: '1팩', image: '🌶️', category: '오늘의행사', badge: '한정' },
+        { id: 6, name: '완숙토마토', originalPrice: 5980, salePrice: 3980, unit: '1kg', image: '🍅', category: '오늘의행사', badge: '특가' }
+    ],
+    eventTitle: '오늘의 초특가',
+    storeInfo: '하모니마트 평택점',
+    phoneNumber: '031-666-0505',
+    address: '경기 평택시 새말로 171층',
+    businessNumber: '2518801342',
+    selectedCategory: '전체',
+    searchTerm: '',
+    searchOpen: false,
+    menuOpen: false,
+    clickCount: 0,
+    
+    init() {
+        this.render();
+    },
+    
+    calculateDiscount(original, sale) {
+        return Math.round((1 - sale / original) * 100);
+    },
+    
+    getFilteredProducts() {
+        return this.products.filter(p => {
+            const matchCategory = this.selectedCategory === '전체' || p.category === this.selectedCategory;
+            const matchSearch = this.searchTerm === '' || p.name.toLowerCase().includes(this.searchTerm.toLowerCase());
+            return matchCategory && matchSearch;
+        });
+    },
+    
+    handleAdminAccess() {
+        this.clickCount++;
+        if (this.clickCount >= 2) {
+            this.viewMode = 'admin';
+            this.clickCount = 0;
+            this.render();
+        }
+        setTimeout(() => { this.clickCount = 0; }, 500);
+    },
+    
+    handleLogin() {
+        if (this.username === '에이치엠유통' && this.password === '1848') {
+            this.isLoggedIn = true;
+            this.viewMode = 'admin';
+            alert('✅ 관리자 로그인 성공!');
+            this.render();
+        } else {
+            alert('❌ 아이디 또는 비밀번호가 틀렸습니다.');
+        }
+    },
+    
+    handleLogout() {
+        this.isLoggedIn = false;
+        this.viewMode = 'customer';
+        this.username = '';
+        this.password = '';
+        this.render();
+    },
+    
+    addProduct() {
+        const newProduct = {
+            id: Date.now(),
+            name: '새 상품',
+            originalPrice: 10000,
+            salePrice: 7900,
+            unit: '1개',
+            image: '🥬',
+            category: '오늘의행사',
+            badge: '특가'
+        };
+        this.products.push(newProduct);
+        this.render();
+    },
+    
+    deleteProduct(id) {
+        if (confirm('정말 삭제하시겠습니까?')) {
+            this.products = this.products.filter(p => p.id !== id);
+            this.render();
+        }
+    },
+    
+    updateProduct(id, field, value) {
+        const product = this.products.find(p => p.id === id);
+        if (product) {
+            product[field] = value;
+            this.render();
+        }
+    },
+    
+    handleImageUpload(id, file) {
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.updateProduct(id, 'image', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    },
+    
+    handleShare() {
+        const text = `🎉 ${this.storeInfo} ${this.eventTitle}\n\n최대 할인 혜택! 지금 확인하세요!\n📞 ${this.phoneNumber}\n\n`;
+        const url = window.location.href;
+        
+        if (navigator.share) {
+            navigator.share({ title: this.storeInfo, text: text, url: url })
+                .catch(() => {
+                    navigator.clipboard.writeText(url).then(() => alert('📋 링크가 복사되었습니다!'));
+                });
+        } else {
+            navigator.clipboard.writeText(url).then(() => alert('📋 링크가 복사되었습니다!\n카카오톡에 붙여넣기 하세요.'));
+        }
+    },
+    
+    handleCall() {
+        window.location.href = 'tel:' + this.phoneNumber.replace(/[^0-9]/g, '');
+    },
+    
+    openLocation() {
+        window.open('https://map.naver.com/p/entry/place/1368320926', '_blank');
+    },
+    
+    renderAdminView() {
+        const emojiList = ['🥩','🍖','🥓','🍗','🐟','🦐','🍤','🥚','🥬','🥒','🍄','🥕','🧅','🥔','🍅','🌽','🍆','🥦','🫑','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍑','🥭','🍍','🥥','🌶️'];
+        
+        return `
+        <div class="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 p-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">🛒 관리자 페이지</h1>
+                            <p class="text-sm text-gray-600">로그인: 에이치엠유통</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="App.viewMode='customer'; App.render();" class="bg-blue-500 text-white px-4 py-2 rounded-lg">고객화면</button>
+                            <button onclick="App.handleLogout()" class="bg-red-500 text-white px-4 py-2 rounded-lg">로그아웃</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">행사명</label>
+                            <input type="text" value="${this.eventTitle}" onchange="App.eventTitle=this.value" class="w-full px-4 py-2 border-2 rounded-lg" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">매장명</label>
+                            <input type="text" value="${this.storeInfo}" onchange="App.storeInfo=this.value" class="w-full px-4 py-2 border-2 rounded-lg" />
+                        </div>
+                    </div>
+                    
+                    <button onclick="App.addProduct()" class="w-full bg-orange-500 text-white py-3 rounded-xl font-semibold">➕ 상품 추가</button>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-xl p-6">
+                    <h2 class="text-xl font-bold mb-4">📦 상품 목록 (${this.products.length}개)</h2>
+                    ${this.products.map(p => `
+                        <div class="border-2 rounded-lg p-4 mb-3">
+                            <div class="grid grid-cols-12 gap-3 items-center mb-3">
+                                <select onchange="App.updateProduct(${p.id}, 'image', this.value)" class="col-span-1 text-2xl border rounded p-2">
+                                    <option value="">📁</option>
+                                    ${emojiList.map(e => `<option value="${e}" ${p.image===e?'selected':''}>${e}</option>`).join('')}
+                                </select>
+                                <input type="text" value="${p.name}" onchange="App.updateProduct(${p.id}, 'name', this.value)" class="col-span-3 border rounded p-2" />
+                                <input type="number" value="${p.originalPrice}" onchange="App.updateProduct(${p.id}, 'originalPrice', parseInt(this.value))" class="col-span-2 border rounded p-2" />
+                                <input type="number" value="${p.salePrice}" onchange="App.updateProduct(${p.id}, 'salePrice', parseInt(this.value))" class="col-span-2 border rounded p-2" />
+                                <input type="text" value="${p.unit}" onchange="App.updateProduct(${p.id}, 'unit', this.value)" class="col-span-1 border rounded p-2" />
+                                <select onchange="App.updateProduct(${p.id}, 'category', this.value)" class="col-span-2 border rounded p-2">
+                                    <option value="오늘의행사" ${p.category==='오늘의행사'?'selected':''}>오늘의행사</option>
+                                    <option value="정육행사" ${p.category==='정육행사'?'selected':''}>정육행사</option>
+                                    <option value="수산행사" ${p.category==='수산행사'?'selected':''}>수산행사</option>
+                                </select>
+                                <button onclick="App.deleteProduct(${p.id})" class="col-span-1 bg-red-500 text-white rounded p-2">🗑️</button>
+                            </div>
+                            <div class="flex gap-3">
+                                <label class="cursor-pointer bg-blue-500 text-white px-4 py-2 rounded">
+                                    📸 사진 업로드
+                                    <input type="file" accept="image/*" onchange="App.handleImageUpload(${p.id}, this.files[0])" class="hidden" />
+                                </label>
+                                ${p.image.startsWith('data:') ? `<img src="${p.image}" class="w-20 h-20 object-cover rounded" />` : `<span class="text-4xl">${p.image}</span>`}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+        `;
+    },
+    
+    renderCustomerView() {
+        const filtered = this.getFilteredProducts();
+        return `
+        <div class="min-h-screen bg-white pb-20">
+            <div class="sticky top-0 bg-white border-b z-50 shadow-sm">
+                <div class="flex items-center justify-between p-4">
+                    <div id="adminAccess" class="cursor-pointer">
+                        <div class="font-bold text-gray-800">${this.storeInfo}</div>
+                        <div class="text-xs text-gray-500">harmonymart.kr</div>
+                    </div>
+                    <button onclick="App.searchOpen=!App.searchOpen; App.render();" class="bg-yellow-400 p-2 rounded-full">🔍</button>
+                </div>
+                ${this.searchOpen ? `<div class="p-4 border-t bg-gray-50">
+                    <input type="text" value="${this.searchTerm}" oninput="App.searchTerm=this.value; App.render();" placeholder="상품명 검색..." class="w-full px-4 py-3 border-2 border-orange-300 rounded-xl" />
+                </div>` : ''}
+            </div>
+            
+            <div class="flex items-center justify-between p-4 border-b">
+                <div class="text-2xl font-black">HARMONY</div>
+                <button onclick="App.menuOpen=!App.menuOpen; App.render();" class="p-2">☰</button>
+            </div>
+            
+            ${this.menuOpen ? `<div class="bg-white border-b shadow-lg p-4 space-y-2">
+                <button onclick="App.openLocation(); App.menuOpen=false; App.render();" class="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg font-semibold">📍 매장 위치</button>
+                <button onclick="App.handleCall(); App.menuOpen=false; App.render();" class="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg font-semibold">📞 전화</button>
+                <button onclick="App.handleShare(); App.menuOpen=false; App.render();" class="w-full text-left px-4 py-3 hover:bg-gray-100 rounded-lg font-semibold">📤 공유</button>
+            </div>` : ''}
+            
+            <div class="flex gap-2 px-4 py-3 overflow-x-auto border-b">
+                ${['전체','오늘의행사','정육행사','수산행사'].map(c => 
+                    `<button onclick="App.selectedCategory='${c}'; App.render();" class="px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${this.selectedCategory===c ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700'}">${c}</button>`
+                ).join('')}
+            </div>
+            
+            <div class="bg-gradient-to-r from-red-500 to-pink-500 py-8 text-center text-white">
+                <div class="text-xs mb-1">💝 💝 💝</div>
+                <h2 class="text-4xl font-black">${this.eventTitle}</h2>
+                <div class="text-xs mt-1">💝 💝 💝</div>
+            </div>
+            
+            <div class="p-2 grid grid-cols-3 gap-2">
+                ${filtered.map(p => {
+                    const discount = this.calculateDiscount(p.originalPrice, p.salePrice);
+                    const badgeColor = p.badge==='특가'?'bg-red-500':p.badge==='최저가'?'bg-blue-500':p.badge==='인기'?'bg-orange-500':'bg-purple-500';
+                    return `
+                    <div class="bg-white border rounded-lg overflow-hidden">
+                        <div class="relative aspect-square bg-gray-50 flex items-center justify-center">
+                            ${p.image.startsWith('data:') ? 
+                                `<img src="${p.image}" class="w-full h-full object-cover" />` :
+                                `<span class="text-6xl">${p.image}</span>`
+                            }
+                            <div class="absolute top-2 left-2 px-2 py-1 rounded text-xs font-bold text-white ${badgeColor}">${p.badge}</div>
+                        </div>
+                        <div class="p-2">
+                            <div class="text-sm font-semibold text-gray-800 mb-1 line-clamp-2 min-h-[40px]">${p.name}</div>
+                            <div class="flex items-center gap-1 mb-1">
+                                <span class="text-xs text-gray-400 line-through">${p.originalPrice.toLocaleString()}원</span>
+                                <span class="text-xs text-red-500 font-bold">${discount}%</span>
+                            </div>
+                            <div class="text-lg font-black text-gray-900">${p.salePrice.toLocaleString()}<span class="text-sm font-normal">원</span></div>
+                            <div class="text-xs text-gray-500 mt-1">${p.unit}</div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+            
+            <div class="mx-4 mt-4 mb-2 bg-white border-2 border-red-200 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center justify-center gap-3 mb-4">
+                    <div class="text-4xl">🚚</div>
+                    <div class="text-center">
+                        <div class="text-red-600 font-black text-xl">50,000원 이상 구매시</div>
+                        <div class="text-red-600 font-bold text-lg">무료 배송 서비스</div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-700 leading-relaxed">
+                    <p class="mb-2">깨지기 쉬운 계란과 냉동제품, 아이스크림, 기타 신선도를 요하는 식품들은 배송불가 합니다</p>
+                    <p>월요일~토요일까지 배송 가능하며, 일요일에는 배송기사님께서 꼭 쉬시고 에너지 충전하고 오십니다~🤗</p>
+                </div>
+            </div>
+            
+            <div class="mx-4 mb-2 bg-blue-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="text-4xl">📢</div>
+                    <div class="text-blue-700 font-black text-xl">환불 및 반품 규정 안내</div>
+                </div>
+                <div class="space-y-2 text-sm text-gray-700">
+                    <div class="flex items-start gap-2"><span class="text-blue-600 font-bold">•</span><span><strong>양곡</strong> 3일이내</span></div>
+                    <div class="flex items-start gap-2"><span class="text-blue-600 font-bold">•</span><span><strong>공산품</strong> 7일이내</span></div>
+                    <div class="flex items-start gap-2"><span class="text-blue-600 font-bold">•</span><span><strong>농산,정육,수산,냉장냉동식품</strong> 24시간 이내</span></div>
+                    <div class="mt-4 pt-4 border-t border-blue-200 text-gray-600">모든 교환 및 반품은 영수증을 반드시 지참 부탁드립니다.</div>
+                </div>
+            </div>
+            
+            <div class="m-4 p-6 bg-white rounded-2xl border-2 shadow-xl">
+                <div class="text-center mb-4">
+                    <h3 class="text-2xl font-black text-gray-800">${this.storeInfo}</h3>
+                    <div class="text-sm text-gray-500 mt-1">주식회사 에이치엠유통</div>
+                </div>
+                <div class="space-y-2 text-sm text-gray-700 mb-4">
+                    <div class="flex gap-2">
+                        <span>📍</span>
+                        <div>
+                            <div class="font-semibold">${this.address}</div>
+                            <button onclick="App.openLocation()" class="text-blue-600 underline mt-1">네이버 지도로 길찾기 →</button>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <span>📞</span>
+                        <button onclick="App.handleCall()" class="font-semibold text-blue-600">${this.phoneNumber}</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <span>🏢</span>
+                        <span class="font-semibold">사업자등록번호: ${this.businessNumber}</span>
+                    </div>
+                </div>
+                <div class="border-t pt-4 text-center text-xs text-gray-500">
+                    Copyright © Enabled 2025. All Rights Reserved.
+                </div>
+            </div>
+            
+            <div class="fixed bottom-0 left-0 right-0 bg-white border-t z-50">
+                <div class="grid grid-cols-4 p-3 gap-2">
+                    <button onclick="window.scrollTo({top:0,behavior:'smooth'})" class="flex flex-col items-center gap-1 p-2"><span>🏠</span><span class="text-xs">홈</span></button>
+                    <button onclick="App.searchOpen=!App.searchOpen; App.render();" class="flex flex-col items-center gap-1 p-2"><span>🔍</span><span class="text-xs">검색</span></button>
+                    <button onclick="App.handleShare()" class="flex flex-col items-center gap-1 p-2"><span>📤</span><span class="text-xs text-blue-600">공유</span></button>
+                    <button onclick="App.handleCall()" class="flex flex-col items-center gap-1 p-2"><span>📞</span><span class="text-xs text-green-600">문의</span></button>
+                </div>
+            </div>
+        </div>
+        `;
+    },
+    
+    renderLoginView() {
+        return `
+        <div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="text-6xl mb-4">🔐</div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">관리자 로그인</h1>
+                    <p class="text-gray-600">하모니마트 평택점</p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">아이디</label>
+                        <input type="text" id="username" class="w-full px-4 py-3 border-2 rounded-lg" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">비밀번호</label>
+                        <input type="password" id="password" class="w-full px-4 py-3 border-2 rounded-lg" />
+                    </div>
+                    <button onclick="App.username=document.getElementById('username').value; App.password=document.getElementById('password').value; App.handleLogin();" class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 rounded-xl font-bold text-lg">🔐 로그인</button>
+                </div>
+                <div class="mt-6 text-center">
+                    <button onclick="App.viewMode='customer'; App.render();" class="text-blue-600 font-semibold">← 뒤로 가기</button>
+                </div>
+            </div>
+        </div>
+        `;
+    },
+    
+    render() {
+        const app = document.getElementById('app');
+        if (!this.isLoggedIn && this.viewMode === 'admin') {
+            app.innerHTML = this.renderLoginView();
+        } else if (this.isLoggedIn && this.viewMode === 'admin') {
+            app.innerHTML = this.renderAdminView();
+        } else {
+            app.innerHTML = this.renderCustomerView();
+        }
+        
+        const adminAccess = document.getElementById('adminAccess');
+        if (adminAccess) {
+            adminAccess.addEventListener('click', () => this.handleAdminAccess());
+            let timer;
+            adminAccess.addEventListener('touchstart', () => {
+                timer = setTimeout(() => { this.viewMode='admin'; this.render(); }, 3000);
+            });
+            adminAccess.addEventListener('touchend', () => clearTimeout(timer));
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
